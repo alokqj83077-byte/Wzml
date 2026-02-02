@@ -49,6 +49,7 @@ uphoster_options = [
     "BUZZHEAVIER_TOKEN",
     "BUZZHEAVIER_FOLDER_ID",
     "PIXELDRAIN_KEY",
+    "VIKINGFILE_USER",
 ]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
@@ -286,6 +287,11 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "String",
         "PixelDrain API Key",
         "<i>Send your PixelDrain API Key.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "VIKINGFILE_USER": (
+        "String",
+        "VikingFile User Hash",
+        "<i>Send your VikingFile user hash.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
 }
 
@@ -539,6 +545,7 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button("Gofile Tools", f"userset {user_id} gofile")
         buttons.data_button("BuzzHeavier Tools", f"userset {user_id} buzzheavier")
         buttons.data_button("PixelDrain Tools", f"userset {user_id} pixeldrain")
+        buttons.data_button("VikingFile Tools", f"userset {user_id} vikingfile")
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
         btns = buttons.build_menu(1)
@@ -566,6 +573,26 @@ async def get_user_settings(from_user, stype="main"):
 ┟ <b>Name</b> → {user_name}
 ┃
 ┖ <b>PixelDrain Key</b> → <code>{pdtoken}</code>"""
+
+    elif stype == "vikingfile":
+        buttons.data_button(
+            "VikingFile User Hash", f"userset {user_id} menu VIKINGFILE_USER"
+        )
+        buttons.data_button("Back", f"userset {user_id} back uphoster", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(1)
+
+        if user_dict.get("VIKINGFILE_USER", False):
+            vfuser = user_dict["VIKINGFILE_USER"]
+        elif Config.VIKINGFILE_USER:
+            vfuser = Config.VIKINGFILE_USER
+        else:
+            vfuser = "None"
+
+        text = f"""⌬ <b>VikingFile Settings :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┖ <b>VikingFile User Hash</b> → <code>{vfuser}</code>"""
 
     elif stype == "buzzheavier":
         buttons.data_button(
@@ -1270,6 +1297,7 @@ async def edit_user_settings(client, query):
         "gofile",
         "buzzheavier",
         "pixeldrain",
+        "vikingfile",
         "ffset",
         "advanced",
         "gdrive",
@@ -1307,7 +1335,7 @@ async def edit_user_settings(client, query):
             )
 
         buttons = ButtonMaker()
-        for service in ["gofile", "buzzheavier", "pixeldrain"]:
+        for service in ["gofile", "buzzheavier", "pixeldrain", "vikingfile"]:
             state = "✓" if service in selected_services else ""
             buttons.data_button(
                 f"{service.capitalize()} {state}",

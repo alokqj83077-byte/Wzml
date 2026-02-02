@@ -333,6 +333,12 @@ class TaskConfig:
                             or Config.PIXELDRAIN_KEY
                         ):
                             raise ValueError("No PixelDrain Key Found!")
+                    elif service == "vikingfile":
+                        if not (
+                            self.user_dict.get("VIKINGFILE_USER")
+                            or Config.VIKINGFILE_USER
+                        ):
+                            raise ValueError("No VikingFile User Hash Found!")
                 self.up_dest = "Uphoster"
 
             if not self.up_dest:

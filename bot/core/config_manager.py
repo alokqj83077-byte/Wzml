@@ -32,6 +32,7 @@ class Config:
     GOFILE_API = ""
     GOFILE_FOLDER_ID = ""
     PIXELDRAIN_KEY = ""
+    VIKINGFILE_USER = ""
     PROTECTED_API = ""
     BUZZHEAVIER_API = ""
     GDRIVE_ID = ""

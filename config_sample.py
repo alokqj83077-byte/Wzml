@@ -26,6 +26,7 @@ USE_SERVICE_ACCOUNTS = False
 NAME_SWAP = ""
 FFMPEG_CMDS = {}
 UPLOAD_PATHS = {}
+VIKINGFILE_USER = ""
 
 # Hyper Tg Downloader
 HELPER_TOKENS = ""

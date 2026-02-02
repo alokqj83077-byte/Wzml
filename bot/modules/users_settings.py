@@ -344,11 +344,14 @@ async def get_user_settings(from_user, stype="main"):
             default_upload = user_dict["DEFAULT_UPLOAD"]
         elif "DEFAULT_UPLOAD" not in user_dict:
             default_upload = Config.DEFAULT_UPLOAD
-        du = "GDRIVE API" if default_upload == "gd" else "RCLONE"
-        dur = "GDRIVE API" if default_upload != "gd" else "RCLONE"
-        buttons.data_button(
-            f"Swap to {dur} Mode", f"userset {user_id} {default_upload}"
-        )
+        upload_labels = {"gd": "GDRIVE API", "rc": "RCLONE", "ddl": "DDL"}
+        du = upload_labels.get(default_upload, "RCLONE")
+        for option, label in upload_labels.items():
+            if option != default_upload:
+                buttons.data_button(
+                    f"Set Default: {label}",
+                    f"userset {user_id} setdefault {option}",
+                )
 
         user_tokens = user_dict.get("USER_TOKENS", False)
         tr = "USER" if user_tokens else "OWNER"
@@ -1426,10 +1429,12 @@ async def edit_user_settings(client, query):
     elif data[2] == "view":
         await query.answer()
         await send_file(message, thumb_path, name)
-    elif data[2] in ["gd", "rc"]:
+    elif data[2] == "setdefault":
         await query.answer()
-        du = "rc" if data[2] == "gd" else "gd"
-        update_user_ldata(user_id, "DEFAULT_UPLOAD", du)
+        if data[3] not in ["gd", "rc", "ddl"]:
+            await query.answer("Invalid default upload.", show_alert=True)
+            return
+        update_user_ldata(user_id, "DEFAULT_UPLOAD", data[3])
         await update_user_settings(query, stype="general")
         await database.update_user_data(user_id)
     elif data[2] == "back":

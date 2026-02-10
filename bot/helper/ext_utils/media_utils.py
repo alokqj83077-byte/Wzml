@@ -96,10 +96,11 @@ async def download_image_thumb(url):
             with open(tmp_path, "wb") as f:
                 f.write(data)
             output = ospath.join(path, f"{time()}.jpg")
+            def _process_thumb(src, dst):
+                with Image.open(src) as im:
+                    im.convert("RGB").save(dst, "JPEG")
             try:
-                await sync_to_async(
-                    Image.open(tmp_path).convert("RGB").save, output, "JPEG"
-                )
+                await sync_to_async(_process_thumb, tmp_path, output)
             except Exception as e:
                 LOGGER.error(f"Failed to process thumb image: {e}")
                 with suppress(Exception):

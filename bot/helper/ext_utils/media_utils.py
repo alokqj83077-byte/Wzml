@@ -46,6 +46,73 @@ async def create_thumb(msg, _id=""):
     return output
 
 
+async def download_image_thumb(url):
+    """Download an image from a URL and save it as a JPEG thumbnail.
+
+    Validates that the URL points to an image via Content-Type header check
+    and enforces a 5MB size limit.
+    Returns the path to the saved thumbnail, or empty string on failure.
+    """
+    from httpx import AsyncClient
+
+    MAX_THUMB_SIZE = 5 * 1024 * 1024  # 5MB
+    try:
+        async with AsyncClient(verify=False, follow_redirects=True, timeout=30) as client:
+            # HEAD request to check content type and size
+            try:
+                head_resp = await client.head(url)
+                content_type = head_resp.headers.get("content-type", "")
+                content_length = head_resp.headers.get("content-length", "")
+                if content_type and not content_type.startswith("image/"):
+                    LOGGER.error(f"Thumb URL is not an image: {content_type}")
+                    return ""
+                if content_length and int(content_length) > MAX_THUMB_SIZE:
+                    LOGGER.error(f"Thumb URL too large: {content_length} bytes")
+                    return ""
+            except Exception:
+                pass  # HEAD failed, will check during GET
+
+            # Download the image
+            resp = await client.get(url)
+            if resp.status_code != 200:
+                LOGGER.error(f"Failed to download thumb URL: HTTP {resp.status_code}")
+                return ""
+
+            # Verify content type from GET response
+            content_type = resp.headers.get("content-type", "")
+            if content_type and not content_type.startswith("image/"):
+                LOGGER.error(f"Thumb URL is not an image: {content_type}")
+                return ""
+
+            data = resp.content
+            if len(data) > MAX_THUMB_SIZE:
+                LOGGER.error(f"Thumb URL too large: {len(data)} bytes")
+                return ""
+
+            # Save and convert to JPEG
+            path = f"{DOWNLOAD_DIR}thumbnails"
+            await makedirs(path, exist_ok=True)
+            tmp_path = ospath.join(path, f"{time()}_tmp")
+            with open(tmp_path, "wb") as f:
+                f.write(data)
+            output = ospath.join(path, f"{time()}.jpg")
+            try:
+                await sync_to_async(
+                    Image.open(tmp_path).convert("RGB").save, output, "JPEG"
+                )
+            except Exception as e:
+                LOGGER.error(f"Failed to process thumb image: {e}")
+                with suppress(Exception):
+                    await remove(tmp_path)
+                return ""
+            with suppress(Exception):
+                await remove(tmp_path)
+            return output
+    except Exception as e:
+        LOGGER.error(f"Error downloading thumb from URL: {e}")
+        return ""
+
+
 async def get_media_info(path, extra_info=False):
     try:
         result = await cmd_exec(

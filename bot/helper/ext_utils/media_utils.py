@@ -56,6 +56,11 @@ async def download_image_thumb(url):
     from httpx import AsyncClient
 
     MAX_THUMB_SIZE = 5 * 1024 * 1024  # 5MB
+    # Content types that are definitely NOT images
+    NON_IMAGE_TYPES = (
+        "text/", "application/json", "application/xml",
+        "application/javascript", "video/", "audio/",
+    )
     try:
         async with AsyncClient(verify=False, follow_redirects=True, timeout=30) as client:
             # HEAD request to check content type and size
@@ -63,7 +68,9 @@ async def download_image_thumb(url):
                 head_resp = await client.head(url)
                 content_type = head_resp.headers.get("content-type", "")
                 content_length = head_resp.headers.get("content-length", "")
-                if content_type and not content_type.startswith("image/"):
+                if content_type and any(
+                    content_type.startswith(t) for t in NON_IMAGE_TYPES
+                ):
                     LOGGER.error(f"Thumb URL is not an image: {content_type}")
                     return ""
                 if content_length and int(content_length) > MAX_THUMB_SIZE:
@@ -78,9 +85,12 @@ async def download_image_thumb(url):
                 LOGGER.error(f"Failed to download thumb URL: HTTP {resp.status_code}")
                 return ""
 
-            # Verify content type from GET response
+            # Only reject known non-image types; unknown types are allowed
+            # PIL will validate the actual image data below
             content_type = resp.headers.get("content-type", "")
-            if content_type and not content_type.startswith("image/"):
+            if content_type and any(
+                content_type.startswith(t) for t in NON_IMAGE_TYPES
+            ):
                 LOGGER.error(f"Thumb URL is not an image: {content_type}")
                 return ""
 
